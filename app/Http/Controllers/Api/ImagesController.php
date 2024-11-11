@@ -35,43 +35,43 @@ class ImagesController extends Controller
     public function store(Request $request)
     {
         // Verifica os dados recebidos
-        // dd($request->all());
         try {
             // Validação dos campos
             $request->validate([
                 'name' => 'required|string|max:255',
                 'description' => 'required|string|max:255',
-                'image' => 'required|image|mimes:png,jpg,jpeg|max:4096'
+                'images' => 'required|array|max:5',  // Permite até 5 imagens
+                'images.*' => 'image|mimes:png,jpg,jpeg|max:4096' // Valida cada imagem
             ]);
 
-
-            // Verifica se o arquivo foi enviado
-            if (!$request->hasFile('image') || !$request->file('image')->isValid()) {
-                return response()->json(['message' => 'No valid image file provided.'], 400);
+            // Processa as imagens
+            $imagePaths = [];
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('gallery', 'public'); // Armazena cada imagem na pasta 'gallery'
+                $imagePaths[] = $path; // Salva o caminho da imagem
             }
 
-            $path = $request->file('image')->store('gallery', 'public');
-
-            // Armazenar no banco de dados (exemplo)
+            // Armazenar no banco de dados
             $imageModel = Image::create([
                 'name' => $request->name,
                 'description' => $request->description,
-                'image' => $path
+                'images' => json_encode($imagePaths), // Armazenar os caminhos das imagens como JSON
             ]);
 
             return response()->json([
-                'message' => 'Image uploaded successfully!',
+                'message' => 'Imagens enviadas com sucesso!',
                 'data' => [
                     'name' => $imageModel->name,
                     'description' => $imageModel->description,
-                    'image' => $path
+                    'images' => $imagePaths,
                 ]
             ], 201);
         } catch (\Throwable $e) {
             return response()->json([
                 'status' => false,
-                'messagem' => 'erro erro a enviar'
-            ], 404);
+                'message' => 'Erro ao enviar as imagens',
+                'error' => $e->getMessage(),
+            ], 400);
         }
     }
 
