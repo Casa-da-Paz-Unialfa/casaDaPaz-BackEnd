@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Image;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 
 class ImagesController extends Controller
@@ -34,28 +35,27 @@ class ImagesController extends Controller
      */
     public function store(Request $request)
     {
-        // Verifica os dados recebidos
         try {
-            // Validação dos campos
             $request->validate([
                 'name' => 'required|string|max:255',
                 'description' => 'required|string|max:255',
-                'images' => 'required|array|max:5',  // Permite até 5 imagens
-                'images.*' => 'image|mimes:png,jpg,jpeg|max:4096' // Valida cada imagem
+                'images' => 'required|array',
+                'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
             ]);
 
-            // Processa as imagens
             $imagePaths = [];
             foreach ($request->file('images') as $image) {
-                $path = $image->store('gallery', 'public'); // Armazena cada imagem na pasta 'gallery'
-                $imagePaths[] = $path; // Salva o caminho da imagem
+                if ($image->isValid()) {
+                    $path = $image->store('gallery', 'public');
+                    $imagePaths[] = $path; // Salva o caminho da imagem
+                }
             }
 
-            // Armazenar no banco de dados
+            // Armazena os caminhos como JSON no campo `image`
             $imageModel = Image::create([
                 'name' => $request->name,
                 'description' => $request->description,
-                'images' => json_encode($imagePaths), // Armazenar os caminhos das imagens como JSON
+                'image' => json_encode($imagePaths),
             ]);
 
             return response()->json([
@@ -74,6 +74,7 @@ class ImagesController extends Controller
             ], 400);
         }
     }
+
 
 
     // /******  96c69de0-bb60-4527-a461-e8e2ad57ec6a  *******/

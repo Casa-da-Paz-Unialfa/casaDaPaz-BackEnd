@@ -19,4 +19,8 @@ class Image extends Model
         'created_at',
         'updated_at',
     ];
+
+    protected $casts = [
+        'image' => 'array', // Converte JSON para array automaticamente
+    ];
 }
