@@ -15,7 +15,14 @@ class ImagesController extends Controller
     public function index()
     {
         $images = Image::all()->map(function ($image) {
-            $image->image = url('storage/' . $image->image); // Gera o URL completo
+            $imagePaths = json_decode($image->image);
+
+            if (is_array($imagePaths) && count($imagePaths) > 0) {
+                $image->image = url('storage/' . ltrim($imagePaths[0], '/'));
+            } else {
+                $image->image = url('storage/' . $image->image);
+            }
+
             return $image;
         });
 
